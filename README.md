@@ -12,26 +12,34 @@ meaningless. So the versions are pinned here, by being *these files*.
 Nothing in this repository is ours. FPC and Lazarus are (L)GPL and freely
 redistributable; these are the unmodified official installers.
 
-## What to attach, and where
+## What is here now: the four installers, in Git LFS
 
-Create **one release**, tagged exactly `toolchain`, and attach these files as release
-assets — not as files committed to git:
-
-| file | needed by | why |
+| file | size | needed by |
 |---|---|---|
-| `fpc-laz_3.2.2-210709_amd64.deb` | Linux | the compiler and the RTL/FCL units |
-| `fpc-src_3.2.2-210709_amd64.deb` | Linux | the Lazarus deb depends on it; a build does not read it, but the install fails without it |
-| `lazarus-project_4.8.0-0_amd64.deb` | Linux | `lazbuild`, and the LCL and LazUtils units prebuilt for GTK2 |
-| `lazarus-*-win64.exe` | Windows | the official Windows installer, whatever its exact name is |
+| `fpc-laz_3.2.2-210709_amd64.deb` | 37.5 MB | Linux — the compiler and the RTL/FCL units |
+| `fpc-src_3.2.2-210709_amd64.deb` | 29.2 MB | Linux — the Lazarus deb depends on it |
+| `lazarus-project_4.8.0-0_amd64.deb` | 149.7 MB | Linux — `lazbuild`, and the LCL prebuilt for GTK2 |
+| `lazarus-4.8-fpc-3.2.2-win64.exe` | 211.8 MB | Windows — the official installer |
 
-**Release assets, not committed files.** GitHub refuses any file over 100 MB on a
-push, and the Lazarus deb is close to or over that; a release asset may be up to 2 GB
-and never enters the git history, so cloning this repository stays instant.
+They are **committed with Git LFS**, so what git holds is a 133-byte pointer per
+file and the bytes live in GitHub's LFS storage. `SG-LPK`'s workflow handles this:
+it clones this repository with `GIT_LFS_SKIP_SMUDGE=1` and then pulls only the files
+the job in hand needs.
 
-The workflow matches the assets by pattern (`fpc-laz_*_amd64.deb`,
-`lazarus-project_*_amd64.deb`, `lazarus-*win64.exe`), so the exact version numbers in
-the names do not have to be edited anywhere when the toolchain is updated. Replacing
-the assets in the `toolchain` release is the whole of an upgrade.
+### Worth knowing: this costs LFS bandwidth on every run
+
+A Linux run pulls 216 MB and a Windows run 212 MB, and **that comes off the
+account's Git LFS bandwidth allowance** — 1 GB a month on a free account. So about
+four runs a month before LFS starts refusing, which shows up as a failed build for a
+reason that has nothing to do with the code.
+
+**Attaching the same four files to a release instead has no such limit**, and the
+workflow already prefers a release if it finds one: it looks for a release tagged
+`toolchain` first and only falls back to LFS. So moving them is a drag-and-drop into
+a new release and no change anywhere else — the assets are matched by pattern
+(`fpc-laz_*_amd64.deb`, `lazarus-*win64.exe`, …), so version numbers in the names do
+not have to be edited. Recommended once the build is working, not before: one thing
+at a time.
 
 ## The token, because this repository is private
 
@@ -39,15 +47,16 @@ the assets in the `toolchain` release is the whole of an upgrade.
 that token is scoped to `SG-LPK` alone. One of the two:
 
 * **keep it private** and give `SG-LPK` a token: Settings → Developer settings →
-  Personal access tokens → Fine-grained tokens → new token, repository access
-  *only* `SG-Toolchain`, permission **Contents: Read-only**. Then in `SG-LPK`:
-  Settings → Secrets and variables → Actions → new repository secret named
-  `TOOLCHAIN_TOKEN`.
-* **or make this repository public**, and the workflow needs no secret at all. There
-  is nothing private in it — it is four public installers.
-
-The workflow fails with a message naming this file if the secret is missing, rather
-than failing obscurely.
+  Personal access tokens → **Fine-grained tokens** → new token, repository access
+  *only* `SG-Toolchain`, permission **Contents: Read-only**. Then in **`SG-LPK`** →
+  Settings → **Secrets and variables → Actions** → **Repository secrets** → New,
+  named exactly `TOOLCHAIN_TOKEN`.
+  The three tabs that look right and are not: **Variables** (that is `vars.`, not
+  `secrets.`), **Dependabot** secrets, and **Codespaces** secrets. A secret put in
+  any of those is invisible to Actions, and the symptom is exactly an empty token.
+* **or make this repository public** and no secret is needed at all — there is
+  nothing private in it, it is four public installers. The workflow falls back to
+  `GITHUB_TOKEN`, which can read any public repository.
 
 ## The second consumer: the assistant's sandbox
 
