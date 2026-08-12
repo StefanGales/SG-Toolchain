@@ -1,0 +1,7 @@
+# The installers are held in Git LFS. Without this file nothing tells the LFS
+# client that these paths are LFS-managed, so `git clone` and `git lfs pull` leave
+# the 133-byte pointers in place instead of the files - which is what broke
+# SG-LPK's first build attempt, and what would happen to anyone cloning this
+# repository by hand.
+*.deb filter=lfs diff=lfs merge=lfs -text
+*.exe filter=lfs diff=lfs merge=lfs -text
